@@ -1,0 +1,147 @@
+---
+name: Build pipeline
+
+on:
+  workflow_call:
+
+jobs:
+
+  tests:
+    name: Tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        build: [x86_64-linux, x86_64-macos]
+        include:
+          - build: x86_64-linux
+            os: ubuntu-20.04
+            rust: stable
+            target: x86_64-unknown-linux-gnu
+            cross: false
+          - build: x86_64-macos
+            os: macos-latest
+            rust: stable
+            target: x86_64-apple-darwin
+            cross: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Install ${{ matrix.rust }} rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          target: ${{ matrix.target }}
+          override: true
+          components: rustfmt, clippy
+      
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Format
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: ${{ matrix.cross }}
+          command: fmt
+          args: --all -- --check
+      
+      - name: Run cargo clippy
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: ${{ matrix.cross }}
+          command: clippy
+          args: -- -D warnings
+      
+      - name: Run cargo test
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: ${{ matrix.cross }}
+          command: test
+          args: --release --locked --target ${{ matrix.target }}
+
+  build:
+    name: Build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        build: [x86_64-linux, x86_64-macos]
+        include:
+          - build: x86_64-linux
+            os: ubuntu-20.04
+            rust: stable
+            target: x86_64-unknown-linux-gnu
+            cross: false
+          - build: x86_64-macos
+            os: macos-latest
+            rust: stable
+            target: x86_64-apple-darwin
+            cross: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Install ${{ matrix.rust }} rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          target: ${{ matrix.target }}
+          override: true
+          components: rustfmt, clippy
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+      
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: ${{ matrix.cross }}
+          command: build
+          args: --release --locked --target ${{ matrix.target }}
+
+      - name: Prep binaries for release
+        run: |
+          mkdir artefacts
+          cp target/${{ matrix.target }}/release/battery-notify artefacts/battery-notify-${{ matrix.build }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: bins-${{ matrix.build }}
+          path: artefacts/battery-notify-${{ matrix.build }}
+
+  release:
+    needs: [tests, build]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        build: [x86_64-linux, x86_64-macos]
+        include:
+          - build: x86_64-linux
+            os: ubuntu-20.04
+            rust: stable
+            target: x86_64-unknown-linux-gnu
+            cross: false
+          - build: x86_64-macos
+            os: macos-latest
+            rust: stable
+            target: x86_64-apple-darwin
+            cross: false
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: bins-${{ matrix.build }}
+          path: artefacts
+
+      - uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artefacts/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
