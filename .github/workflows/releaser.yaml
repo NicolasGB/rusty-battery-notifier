@@ -59,8 +59,7 @@ jobs:
           addChannel: []
           branches: ['+([0-9])?(.{+([0-9]),x}).x', 'main']
           assets:
-            - path: artefacts/battery-notify-${{ matrix.build }}
-              label: ${{ matrix.build }}
+            - path: artefacts/battery-notify-*
           EOF
           fi
 
