@@ -1,0 +1,20 @@
+---
+  name: Build pipeline
+  
+  on:
+    push:
+      branches:
+        - main
+        - develop
+      tags:
+        - '*'
+  
+  jobs:
+    rust:
+      uses: ./.github/workflows/rust.yaml
+      secrets: inherit
+    release:
+      needs: rust
+      uses: ./.github/workflows/releaser.yaml
+      secrets: inherit
+      if: github.ref == 'refs/heads/main'
