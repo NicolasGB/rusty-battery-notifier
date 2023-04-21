@@ -110,5 +110,5 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: bins-${{ matrix.build }}
-          path: artefacts/battery-notify-${{ matrix.build }}
+          name: bins
+          path: artefacts/
