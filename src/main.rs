@@ -35,8 +35,6 @@ fn main() {
 
     let (mut first_shown, mut second_shown) = (false, false);
     loop {
-        if let battery::State::Discharging = battery.state() {}
-
         match battery.state() {
             battery::State::Charging => {
                 //When chargin we reset notifications shown
@@ -62,10 +60,10 @@ fn main() {
                     && current_percentage > second_threshold_warning as f64
                 {
                     Notification::new()
-                        .summary("Battery")
+                        .summary("  Battery")
                         .icon("firefox")
                         .body(&format!("Running low: {percent_to_show}%"))
-                        .timeout(Timeout::Milliseconds(5000))
+                        .timeout(Timeout::Milliseconds(10000))
                         .show()
                         .unwrap();
 
@@ -73,11 +71,12 @@ fn main() {
                     first_shown = true;
                 } else if !second_shown && current_percentage <= second_threshold_warning as f64 {
                     Notification::new()
-                        .summary("Battery")
+                        .summary("  Battery")
                         .body(&format!(
                             "Extremely low: {percent_to_show}%. Please plug me in!"
                         ))
-                        .timeout(Timeout::Milliseconds(10000))
+                        // Waiting for user to click to "aknowledge"
+                        .timeout(Timeout::Milliseconds(0))
                         .show()
                         .unwrap();
                     //Set shown to true to avoid spamming
