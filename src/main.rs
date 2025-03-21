@@ -60,8 +60,8 @@ fn main() {
                     && current_percentage > second_threshold_warning as f64
                 {
                     Notification::new()
-                        .summary("  Battery")
-                        .icon("firefox")
+                        .summary("Battery")
+                        .icon("battery-level-20-symbolic")
                         .body(&format!("Running low: {percent_to_show}%"))
                         .timeout(Timeout::Milliseconds(10000))
                         .show()
@@ -71,11 +71,12 @@ fn main() {
                     first_shown = true;
                 } else if !second_shown && current_percentage <= second_threshold_warning as f64 {
                     Notification::new()
-                        .summary("  Battery")
+                        .summary("Battery")
+                        .icon("battery-level-10-symbolic")
                         .body(&format!(
                             "Extremely low: {percent_to_show}%. Please plug me in!"
                         ))
-                        // Waiting for user to click to "aknowledge"
+                        // Waiting for user to click to "acknowledge"
                         .timeout(Timeout::Milliseconds(0))
                         .show()
                         .unwrap();
